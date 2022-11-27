@@ -1,0 +1,67 @@
+MATCH (n)
+DETACH DELETE n
+
+CREATE CONSTRAINT FOR (c:Person) REQUIRE c.email IS UNIQUE
+
+MERGE (p1:Person{email:'phillip.allen@enron.com', name:'Phillip K Allen'})
+MERGE (p2:Person{email:'tim.belden@enron.com', name:'Tim Belden'})
+CREATE (p1)-[:EMAILED_GOOD {sentiment:'good'}]->(p2)
+
+MERGE (p1:Person{email:'phillip.allen@enron.com', name:'Phillip K Allen'})
+MERGE (p2:Person{email:'outlook.team@enron.com', name:' Outlook Migration Team'})
+MERGE (p3:Person{email:'hugo@enron.com', name:'Hugo Ramirez'})
+CREATE (p1)-[:EMAILED_BAD {sentiment:'neutral'}]->(p2)
+CREATE (p1)-[:CC]->(p3)
+     
+
+
+
+
+CREATE CONSTRAINT FOR (c:Person) REQUIRE c.name IS UNIQUE
+CREATE CONSTRAINT FOR (e:Email) REQUIRE c.id IS UNIQUE
+CREATE CONSTRAINT FOR (r:Reply) REQUIRE r.id IS UNIQUE
+
+
+MERGE (email_6:Email {id:'6', content:'email'})
+MERGE (bob:Person {name:'Bob'})-[:SENT]->(email_6)
+MERGE (email_6)-[:TO]->(charlie:Person {name:'Charlie'})
+MERGE (email_6)-[:TO]->(davina:Person {name:'Davina'})
+
+MERGE (reply_1:Email:Reply {id:'7', content:'response'})
+MERGE (reply_1)-[:REPLY_TO]->(email_6)
+MERGE (davina)-[:SENT]->(reply_1)
+MERGE (reply_1)-[:TO]->(bob)
+MERGE (reply_1)-[:TO]->(charlie)
+
+MERGE (reply_2:Email:Reply {id:'8', content:'response'})
+MERGE (reply_2)-[:REPLY_TO]->(email_6)
+MERGE (bob)-[:SENT]->(reply_2)
+MERGE (reply_2)-[:TO]->(davina)
+MERGE (reply_2)-[:TO]->(charlie)
+MERGE (reply_2)-[:CC]->(alice:Person {name:'Alice'})
+
+MERGE (reply_3:Email:Reply {id:'9', content:'response'})
+MERGE (reply_3)-[:REPLY_TO]->(reply_1)
+MERGE (charlie)-[:SENT]->(reply_3)
+MERGE (reply_3)-[:TO]->(bob)
+MERGE (reply_3)-[:TO]->(davina)
+
+MERGE (reply_4:Email:Reply {id:'10', content:'response'})
+MERGE (reply_4)-[:REPLY_TO]->(reply_3)
+MERGE (bob)-[:SENT]->(reply_4)
+MERGE (reply_4)-[:TO]->(charlie)
+MERGE (reply_4)-[:TO]->(davina)
+      
+MERGE (alice)-[:ALIAS_OF]->(bob)
+
+
+Quienes contestaron el correo 6?
+
+MATCH p=(email:Email {id:'6'})<-[:REPLY_TO*1..4]-(:Reply)<-[:SENT]-(replier) 
+RETURN replier.name AS replier, length(p) - 1 AS depth
+ORDER BY depth
+
+Todas las relaciones del correo 6:
+
+MATCH p=(email:Email {id:'6'})<-[:REPLY_TO*1..4]-(:Reply)<-[:SENT]-(replier) 
+RETURN p
